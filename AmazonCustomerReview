@@ -1,0 +1,42 @@
+import pandas as pd
+import re
+def to_df(file_path):
+   with open(file_path, 'r') as fin:
+       df = {}
+       i = 0
+       for line in fin:
+           df[i] = eval(line)
+           i += 1
+       df = pd.DataFrame.from_dict(df, orient='index')
+       return df
+
+dataframe = to_df('C:/Users/Shuan_000/Desktop/Amazon Project/reviews_Musical_Instruments.json')
+
+word_dict = {}
+for line_index in dataframe.index:
+    line = dataframe.loc[line_index]
+    for word in line['reviewText'].split( ):
+        if word not in word_dict:
+            word_dict[word] = 0
+        if word in word_dict:
+            word_dict[word] += 1
+print (len(word_dict.keys()))
+print (word_dict)
+
+
+with open('C:/Users/Shuan_000/Desktop/IMT573/Project/dict.csv') as csv_file:
+    reader = csv.reader(csv_file)
+    word_dict = dict(reader)
+
+import pandas as pd
+
+#(pd.DataFrame.from_dict(data=word_dict, orient='index')
+   #.to_csv('C:/Users/Shuan_000/Desktop/dict.csv', header=False))
+
+
+def export_file(dataframe):
+     dataframe = dataframe.applymap(lambda x: x.encode('unicode_escape').decode('utf-8') if isinstance(x,str) else x)
+     dataframe.to_excel('C:/Users/Shuan_000/Desktop/Amazon Project/output.xlsx', engine = 'xlsxwriter')
+   #  return ()
+
+export_file(dataframe)
