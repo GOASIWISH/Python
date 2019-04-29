@@ -1,0 +1,106 @@
+# Data Input and Display
+import numpy as np
+import pandas as pd
+import os,sys
+from scipy import stats
+data = open('Data/links.txt','r').readlines()
+#print (linkdata[0:20])
+
+# Analyze the dataset for matrix setup
+Cited =[]
+
+for _, line in enumerate(data):
+        line = line.split(',')
+        cited = str(line[1])       
+        Cited.append(cited)
+        
+newdata = list(Cited)
+df =pd.DataFrame(data =newdata,columns =['Cited'])
+
+Unique_Cited =[]
+for x in df['Cited'].unique():
+    Unique_Cited.append(x)
+
+# Count how many unique articles for matrix building(row, column)
+len(Unique_Cited)
+
+# Creating an Adjacency Matrix
+# According to the first step, I already knew that there are 10,748 unique articles. 
+def article_matrix():    
+    matrix =np.zeros((10748,10748))
+    Cited_Article = []
+
+    for _, line in enumerate(data):
+        line = line.split(',')
+        citing = int(line[0])
+        cited = int(line[1])
+        citation_number = int(float(line[2]))
+        
+        matrix[cited][citing] = citation_number
+        Cited_Article.append(cited)
+        
+    return matrix,Cited_Article
+    
+# Modifying the Adjacency Matrix
+# Identifying the Dangling Nodes
+def normalize_article_matrix(article_matrix):
+    Dangling_nodes =[]
+    for x, y in enumerate(article_matrix.T):
+        sum = np.sum(y)
+        if sum !=0:
+            article_matrix.T[x] = y/sum
+            Dangling_nodes.append(0)
+        else:
+            Dangling_nodes.append(1)
+    return article_matrix,Dangling_nodes
+    
+# Calculating the Influence Vector 
+# Article Vector = AV ; Infuence Vector = IV
+# Alpha constant (a = 0.85)
+# Epsilon constant (e = 0.00001)
+def IV_function(IV,AV,d,H):
+    vec = np.multiply(0.85,H)
+    vec = np.dot(vec,IV)
+    Alpha_d = np.multiply(0.85,d)
+    dot_IV = np.dot(Alpha_d,IV)
+    dot_IV = np.dot(Alpha_d,IV) + (1-0.85)
+    dot_a = np.multiply(dot_IV,IV)
+    
+    return vec +dot_a
+def converged(residual):
+    not_less_than = list(filter(lambda x: x >= 0.00001, residual))
+    return len(not_less_than) == 0
+
+def iterate(IV,AV,d,H):
+    residual = [1] * 10748
+    count = 0
+    
+    while not converged(residual):
+        IV_new = IV_function(IV,AV,d,H)
+        residual = IV_new - IV
+        IV = IV_new
+        count += 1
+    return IV, count
+    
+ # Calculating Eigenfactor (EF)
+Z_article_matrix, Cited = article_matrix()
+np.fill_diagonal(Z_article_matrix,0)
+H_article_matrix, d = normalize_article_matrix(Z_article_matrix)
+A_tot = np.array([1]*10748)
+AV = A_tot/10748
+IV = np.array([1/10748]*10748)
+IV = np.reshape(IV,(10748,1))
+AV = np.reshape(AV,(10748,1))
+
+IV,count = iterate(IV,AV,d,H_article_matrix)
+
+EF = (100*(np.dot(H_article_matrix,IV)/np.sum(np.dot(H_article_matrix,IV))))
+
+df = pd.DataFrame({'Cited':Cited[:len(EF)],'EF':EF.T[0]})
+
+df = df.sort_values(by=['EF'],ascending =False)
+
+df.index.name = 'Cited'
+
+print(df['EF'].head(50))
+print("Count of Iteration:{0}".format(count))   
