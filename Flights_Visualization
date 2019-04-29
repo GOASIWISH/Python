@@ -1,0 +1,14 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+flights_df= pd.read_csv('Data/flights.csv')
+
+carrier_grouped =flights_df.groupby(['carrier'])
+carrier_group = carrier_grouped['dep_delay'].agg([np.sum])
+carrier_group 
+# Find out top 4 dep_delay_sum carriers : EV; B6; UA; DL
+
+flights_df.groupby('carrier')['dep_delay'].sum().plot(kind = 'bar')
+fig, ax = plt.subplots(figsize=(25,10))
+flights_df.groupby(['date','carrier']).sum()['dep_delay'].unstack().plot(ax=ax)
